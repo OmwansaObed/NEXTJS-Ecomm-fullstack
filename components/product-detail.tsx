@@ -9,7 +9,7 @@ interface Props {
 }
 
 const ProductDetails = ({ product }: Props) => {
-  const { items, addItem, removeItem, clearCart } = useCartStore();
+  const { items, addItem, removeItem } = useCartStore();
 
   const cartItem = items.find((item) => item.id === product.id);
   const quantity = cartItem ? cartItem.quantity : 0;
