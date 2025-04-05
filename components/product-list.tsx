@@ -4,26 +4,50 @@ import Stripe from "stripe";
 import { ProductCard } from "./product-card";
 import { useState } from "react";
 
+// Define more specific type that allows for different data structures
 interface Props {
-  products: Stripe.Product[];
+  products: Stripe.Product[] | { data: Stripe.Product[] } | any;
 }
 
 export const ProductList = ({ products }: Props) => {
   const [searchTerm, setSearchTerm] = useState<string>("");
 
-  // Check if products is an array before filtering
-  const productArray = Array.isArray(products)
-    ? products
-    : products?.data || [];
+  // More robust handling of different data structures
+  const productArray = (() => {
+    if (Array.isArray(products)) {
+      return products;
+    } else if (
+      products &&
+      typeof products === "object" &&
+      "data" in products &&
+      Array.isArray(products.data)
+    ) {
+      return products.data;
+    } else {
+      console.error("Products data is not in expected format:", products);
+      return [];
+    }
+  })();
 
   const filteredProducts = productArray.filter((product) => {
+    if (!product) return false;
+
     const term = searchTerm.toLowerCase();
-    const nameMatch = product.name.toLowerCase().includes(term);
+    const nameMatch = product.name && product.name.toLowerCase().includes(term);
     const descriptionMatch = product.description
       ? product.description.toLowerCase().includes(term)
       : false;
     return nameMatch || descriptionMatch;
   });
+
+  // Add null check for empty product list
+  if (productArray.length === 0) {
+    return (
+      <div className="w-full max-w-6xl mx-auto px-4 py-8 text-center">
+        <p className="text-gray-500">No products available</p>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 py-8">
@@ -53,8 +77,8 @@ export const ProductList = ({ products }: Props) => {
         </div>
       </div>
       <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {filteredProducts?.map((product, key) => (
-          <li key={key}>
+        {filteredProducts.map((product, index) => (
+          <li key={product.id || index}>
             <ProductCard product={product} />
           </li>
         ))}
